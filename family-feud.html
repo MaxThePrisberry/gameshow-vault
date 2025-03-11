@@ -140,11 +140,11 @@
             user-select: none;
         }
         .answer.revealed .answer-text, 
-        .answer.revealed .answer-points {
+        .answer.revealed .answer-votes {
             opacity: 1;
         }
         .answer:not(.revealed)::before {
-            content: "?";
+            content: attr(data-number);
             position: absolute;
             left: 0;
             top: 0;
@@ -162,7 +162,7 @@
             opacity: 0;
             transition: opacity 0.5s;
         }
-        .answer-points {
+        .answer-votes {
             background-color: #FFD700;
             color: #000;
             padding: 5px 10px;
@@ -202,22 +202,18 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 15px;
         }
-        .team1-points {
+        .team1-votes {
             background-color: #007bff;
         }
-        .team2-points {
+        .team2-votes {
             background-color: #dc3545;
+        }
+        .strike-btn {
+            background-color: #dc3545;
+            grid-column: span 3;
         }
         .next-question {
             background-color: #28a745;
-        }
-        .team1-controls, .team2-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .team1-controls button, .team2-controls button {
-            font-size: 1rem;
         }
         .new-game {
             grid-column: span 3;
@@ -268,6 +264,10 @@
         .game-settings input[type="number"] {
             width: 80px;
         }
+        .action-button {
+            margin-top: 10px;
+            background-color: #17a2b8;
+        }
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -278,7 +278,7 @@
             .controls {
                 grid-template-columns: 1fr;
             }
-            .new-game {
+            .new-game, .strike-btn {
                 grid-column: auto;
             }
         }
@@ -298,19 +298,19 @@
                 <input type="text" id="question-input" placeholder="Enter a question..." required>
                 <div class="answer-group">
                     <input type="text" class="answer-input" placeholder="Answer 1" required>
-                    <input type="number" class="points-input" placeholder="Points" min="1" required>
+                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
                 </div>
                 <div class="answer-group">
                     <input type="text" class="answer-input" placeholder="Answer 2" required>
-                    <input type="number" class="points-input" placeholder="Points" min="1" required>
+                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
                 </div>
                 <div class="answer-group">
                     <input type="text" class="answer-input" placeholder="Answer 3" required>
-                    <input type="number" class="points-input" placeholder="Points" min="1" required>
+                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
                 </div>
                 <div class="answer-group">
                     <input type="text" class="answer-input" placeholder="Answer 4" required>
-                    <input type="number" class="points-input" placeholder="Points" min="1" required>
+                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
                 </div>
                 <button id="add-question-btn">Add Question</button>
             </div>
@@ -328,7 +328,7 @@
                 <input type="text" id="team2-name" placeholder="Team 2 Name" value="Team 2">
             </div>
 
-            <!-- Game Settings - Added customizable strikes -->
+            <!-- Game Settings -->
             <div class="question-form" style="margin-top: 20px;">
                 <h3>Game Settings</h3>
                 <div class="game-settings">
@@ -341,6 +341,7 @@
             <div style="display: flex; gap: 15px; margin-top: 20px;">
                 <button id="save-questions-btn" style="background-color: #007bff;">Save Questions</button>
                 <button id="load-questions-btn" style="background-color: #6c757d;">Load Saved Questions</button>
+                <button id="download-cheatsheet-btn" style="background-color: #17a2b8;">Download Cheat Sheet</button>
             </div>
 
             <!-- Start Game Button -->
@@ -384,15 +385,10 @@
 
             <!-- Game Controls -->
             <div class="controls">
-                <div class="team1-controls">
-                    <button class="team1-points" id="team1-add-btn">+Points to Team 1</button>
-                    <button id="team1-strike-btn">Strike</button>
-                </div>
+                <button class="team1-votes" id="team1-add-btn">+Votes to Team 1</button>
                 <button class="next-question" id="next-question-btn">Next Question</button>
-                <div class="team2-controls">
-                    <button class="team2-points" id="team2-add-btn">+Points to Team 2</button>
-                    <button id="team2-strike-btn">Strike</button>
-                </div>
+                <button class="team2-votes" id="team2-add-btn">+Votes to Team 2</button>
+                <button class="strike-btn" id="strike-btn">Record Strike</button>
                 <button class="new-game" id="new-game-btn">New Game</button>
             </div>
         </div>
@@ -415,12 +411,13 @@
         const gameContainer = document.querySelector('.game-container');
         const questionInput = document.getElementById('question-input');
         const answerInputs = document.querySelectorAll('.answer-input');
-        const pointsInputs = document.querySelectorAll('.points-input');
+        const votesInputs = document.querySelectorAll('.votes-input');
         const addQuestionBtn = document.getElementById('add-question-btn');
         const questionsContainer = document.getElementById('questions-container');
         const startGameBtn = document.getElementById('start-game-btn');
         const saveQuestionsBtn = document.getElementById('save-questions-btn');
         const loadQuestionsBtn = document.getElementById('load-questions-btn');
+        const downloadCheatsheetBtn = document.getElementById('download-cheatsheet-btn');
         const team1NameInput = document.getElementById('team1-name');
         const team2NameInput = document.getElementById('team2-name');
         const maxStrikesInput = document.getElementById('max-strikes');
@@ -432,8 +429,7 @@
         const team2ScoreDisplay = document.getElementById('team2-score');
         const team1AddBtn = document.getElementById('team1-add-btn');
         const team2AddBtn = document.getElementById('team2-add-btn');
-        const team1StrikeBtn = document.getElementById('team1-strike-btn');
-        const team2StrikeBtn = document.getElementById('team2-strike-btn');
+        const strikeBtn = document.getElementById('strike-btn');
         const nextQuestionBtn = document.getElementById('next-question-btn');
         const newGameBtn = document.getElementById('new-game-btn');
         const strikeContainer = document.getElementById('strike-container');
@@ -468,27 +464,32 @@
             const answers = [];
             let isValid = true;
 
-            // Validate all answers have text and points
+            // Validate all answers have text and votes
             for (let i = 0; i < 4; i++) {
                 const answerText = answerInputs[i].value.trim();
-                const points = parseInt(pointsInputs[i].value);
+                const votes = parseInt(votesInputs[i].value);
 
-                if (!answerText || isNaN(points) || points <= 0) {
+                if (!answerText || isNaN(votes) || votes <= 0) {
                     isValid = false;
-                    alert(`Please fill in all answers and points`);
+                    alert(`Please fill in all answers and votes`);
                     break;
                 }
 
                 answers.push({
                     text: answerText,
-                    points: points
+                    votes: votes
                 });
             }
 
             if (!isValid) return;
 
-            // Sort answers by points (highest first)
-            answers.sort((a, b) => b.points - a.points);
+            // Sort answers by votes (highest first), then alphabetically for ties
+            answers.sort((a, b) => {
+                if (b.votes === a.votes) {
+                    return a.text.localeCompare(b.text); // Alphabetical for ties
+                }
+                return b.votes - a.votes;
+            });
 
             // Add to game state
             const question = {
@@ -503,7 +504,7 @@
             // Clear the form
             questionInput.value = '';
             answerInputs.forEach(input => input.value = '');
-            pointsInputs.forEach(input => input.value = '');
+            votesInputs.forEach(input => input.value = '');
         });
 
         // Display question in the list
@@ -548,7 +549,7 @@
             displayTeam1Name.textContent = team1Name;
             displayTeam2Name.textContent = team2Name;
             
-            // Set max strikes (added)
+            // Set max strikes
             const maxStrikes = parseInt(maxStrikesInput.value);
             if (isNaN(maxStrikes) || maxStrikes < 1) {
                 gameState.maxStrikes = 3; // Default to 3 if invalid
@@ -597,17 +598,18 @@
                 const answerEl = document.createElement('div');
                 answerEl.className = 'answer';
                 answerEl.dataset.index = answerIndex;
+                answerEl.dataset.number = answerIndex + 1; // Add number attribute for display
 
                 const answerText = document.createElement('div');
                 answerText.className = 'answer-text';
                 answerText.textContent = answer.text;
 
-                const answerPoints = document.createElement('div');
-                answerPoints.className = 'answer-points';
-                answerPoints.textContent = answer.points;
+                const answerVotes = document.createElement('div');
+                answerVotes.className = 'answer-votes';
+                answerVotes.textContent = answer.votes;
 
                 answerEl.appendChild(answerText);
-                answerEl.appendChild(answerPoints);
+                answerEl.appendChild(answerVotes);
                 answersBoard.appendChild(answerEl);
 
                 // Add click event to reveal answer
@@ -633,15 +635,13 @@
             // Reveal in UI
             answerElements[index].classList.add('revealed');
 
-            // Play reveal sound or animation here if desired
-
             // Check if all answers are revealed
             if (gameState.revealedAnswers.length === currentQuestion.answers.length) {
                 allRevealedMessage.style.display = 'block';
             }
         }
 
-        // Add points to team
+        // Add votes to team
         team1AddBtn.addEventListener('click', () => {
             if (gameState.revealedAnswers.length === 0) {
                 alert('Reveal at least one answer first!');
@@ -649,20 +649,20 @@
             }
 
             const currentQuestion = gameState.questions[gameState.currentQuestionIndex];
-            let roundPoints = 0;
+            let roundVotes = 0;
 
-            // Sum points from all revealed answers
+            // Sum votes from all revealed answers
             gameState.revealedAnswers.forEach(index => {
-                roundPoints += currentQuestion.answers[index].points;
+                roundVotes += currentQuestion.answers[index].votes;
             });
 
             // Add to team score
-            gameState.team1Score += roundPoints;
+            gameState.team1Score += roundVotes;
             team1ScoreDisplay.textContent = gameState.team1Score;
 
             // Move to next question
             gameState.currentQuestionIndex++;
-            nextQuestionBtn.click();
+            loadQuestion(gameState.currentQuestionIndex);
         });
 
         team2AddBtn.addEventListener('click', () => {
@@ -672,32 +672,24 @@
             }
 
             const currentQuestion = gameState.questions[gameState.currentQuestionIndex];
-            let roundPoints = 0;
+            let roundVotes = 0;
 
-            // Sum points from all revealed answers
+            // Sum votes from all revealed answers
             gameState.revealedAnswers.forEach(index => {
-                roundPoints += currentQuestion.answers[index].points;
+                roundVotes += currentQuestion.answers[index].votes;
             });
 
             // Add to team score
-            gameState.team2Score += roundPoints;
+            gameState.team2Score += roundVotes;
             team2ScoreDisplay.textContent = gameState.team2Score;
 
             // Move to next question
             gameState.currentQuestionIndex++;
-            nextQuestionBtn.click();
+            loadQuestion(gameState.currentQuestionIndex);
         });
 
-        // Handle strikes
-        team1StrikeBtn.addEventListener('click', () => {
-            addStrike();
-        });
-
-        team2StrikeBtn.addEventListener('click', () => {
-            addStrike();
-        });
-
-        function addStrike() {
+        // Handle strikes (now with a single button)
+        strikeBtn.addEventListener('click', () => {
             if (gameState.currentStrikes < gameState.maxStrikes) {
                 gameState.currentStrikes++;
                 updateStrikesDisplay();
@@ -706,11 +698,11 @@
                 if (gameState.currentStrikes === gameState.maxStrikes) {
                     if (confirm(`${gameState.maxStrikes} strikes! Move to next question?`)) {
                         gameState.currentQuestionIndex++;
-                        nextQuestionBtn.click();
+                        loadQuestion(gameState.currentQuestionIndex);
                     }
                 }
             }
-        }
+        });
 
         function updateStrikesDisplay() {
             strikes.forEach((strike, index) => {
@@ -722,27 +714,56 @@
             });
         }
 
-        // Next question
+        // Next question - FIXED to move to the next question correctly
         nextQuestionBtn.addEventListener('click', () => {
+            gameState.currentQuestionIndex++;
             loadQuestion(gameState.currentQuestionIndex);
         });
 
-        // New game - FIXED: Reset scores when starting a new game
+        // New game - Reset scores and start from the first question
         newGameBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to start a new game?')) {
-                // Reset scores
+                // Reset scores and question index
                 gameState.team1Score = 0;
                 gameState.team2Score = 0;
+                gameState.currentQuestionIndex = 0; // Reset question index to start at beginning
                 team1ScoreDisplay.textContent = '0';
                 team2ScoreDisplay.textContent = '0';
                 
                 gameContainer.classList.add('hidden');
                 setupContainer.classList.remove('hidden');
-                
-                // Optionally clear existing questions
-                // gameState.questions = [];
-                // renderQuestionsList();
             }
+        });
+        
+        // Generate and download cheat sheet
+        downloadCheatsheetBtn.addEventListener('click', () => {
+            if (gameState.questions.length === 0) {
+                alert('No questions to generate cheat sheet. Please add questions first.');
+                return;
+            }
+            
+            // Create cheat sheet content
+            let cheatSheetContent = "FAMILY FEUD CHEAT SHEET\n\n";
+            
+            gameState.questions.forEach((question, qIndex) => {
+                cheatSheetContent += `Question ${qIndex + 1}: ${question.text}\n`;
+                question.answers.forEach((answer, aIndex) => {
+                    cheatSheetContent += `  ${aIndex + 1}. ${answer.text} (${answer.votes} votes)\n`;
+                });
+                cheatSheetContent += "\n";
+            });
+            
+            // Create a download link
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(cheatSheetContent));
+            element.setAttribute('download', 'family-feud-cheatsheet.txt');
+            
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            
+            element.click();
+            
+            document.body.removeChild(element);
         });
         
         // Save questions to localStorage
