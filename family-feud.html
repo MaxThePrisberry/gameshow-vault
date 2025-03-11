@@ -33,7 +33,7 @@
             --large-text: 1.8rem;
         }
         
-        /* Adjust height for TV mode to prevent scrolling */
+        /* TV mode adjustments */
         body.tv-mode .game-container {
             height: 95vh;
             display: flex;
@@ -41,13 +41,13 @@
             overflow: hidden;
         }
         
-        body.tv-mode .answers {
+        body.tv-mode .game-container .answers {
             max-height: 50vh;
             overflow: visible;
         }
         
-        body.tv-mode .all-revealed-message,
-        body.tv-mode .all-revealed-bonus {
+        body.tv-mode .game-container .all-revealed-message,
+        body.tv-mode .game-container .all-revealed-bonus {
             position: absolute;
             bottom: 180px;
             left: 0;
@@ -58,7 +58,7 @@
             margin: 0;
         }
         
-        body.tv-mode .teams {
+        body.tv-mode .game-container .teams {
             margin-top: auto;
         }
         
@@ -745,11 +745,26 @@
             if (this.value === 'variable') {
                 gameState.variableAnswers = true;
                 variableAnswersControls.style.display = 'block';
+                
+                // Add delete buttons to answers 3 and 4
+                const answerGroups = answerGroupsContainer.querySelectorAll('.answer-group');
+                answerGroups.forEach((group, index) => {
+                    // Add remove buttons to answers 3 and 4 (index 2 and 3)
+                    if (index >= 2 && !group.querySelector('.remove-answer-btn')) {
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-answer-btn';
+                        removeBtn.textContent = 'X';
+                        removeBtn.addEventListener('click', function() {
+                            answerGroupsContainer.removeChild(group);
+                        });
+                        group.appendChild(removeBtn);
+                    }
+                });
             } else {
                 gameState.variableAnswers = false;
                 variableAnswersControls.style.display = 'none';
                 
-                // Reset to exactly 4 answer fields
+                // Reset to exactly 4 answer fields without delete buttons
                 answerGroupsContainer.innerHTML = '';
                 for (let i = 0; i < 4; i++) {
                     addAnswerField(i + 1);
@@ -1232,6 +1247,9 @@
                 // Return to the setup screen
                 gameContainer.classList.add('hidden');
                 setupContainer.classList.remove('hidden');
+                
+                // Remove TV mode when returning to setup
+                document.body.classList.remove('tv-mode');
             }
         });
         
