@@ -256,6 +256,18 @@
             margin: 20px 0;
             display: none;
         }
+        .game-settings {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .game-settings label {
+            font-weight: bold;
+        }
+        .game-settings input[type="number"] {
+            width: 80px;
+        }
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -316,6 +328,15 @@
                 <input type="text" id="team2-name" placeholder="Team 2 Name" value="Team 2">
             </div>
 
+            <!-- Game Settings - Added customizable strikes -->
+            <div class="question-form" style="margin-top: 20px;">
+                <h3>Game Settings</h3>
+                <div class="game-settings">
+                    <label for="max-strikes">Number of Strikes:</label>
+                    <input type="number" id="max-strikes" min="1" max="10" value="3">
+                </div>
+            </div>
+
             <!-- Save/Load Questions -->
             <div style="display: flex; gap: 15px; margin-top: 20px;">
                 <button id="save-questions-btn" style="background-color: #007bff;">Save Questions</button>
@@ -334,10 +355,8 @@
             </div>
 
             <!-- Strikes -->
-            <div class="strike-container">
-                <div class="strike" id="strike-1">X</div>
-                <div class="strike" id="strike-2">X</div>
-                <div class="strike" id="strike-3">X</div>
+            <div class="strike-container" id="strike-container">
+                <!-- Strikes will be dynamically generated based on settings -->
             </div>
 
             <!-- Answers Board -->
@@ -387,6 +406,7 @@
             team1Score: 0,
             team2Score: 0,
             currentStrikes: 0,
+            maxStrikes: 3, // Default value, now can be customized
             revealedAnswers: []
         };
 
@@ -403,6 +423,7 @@
         const loadQuestionsBtn = document.getElementById('load-questions-btn');
         const team1NameInput = document.getElementById('team1-name');
         const team2NameInput = document.getElementById('team2-name');
+        const maxStrikesInput = document.getElementById('max-strikes');
         const displayTeam1Name = document.getElementById('display-team1-name');
         const displayTeam2Name = document.getElementById('display-team2-name');
         const currentQuestionDisplay = document.getElementById('current-question');
@@ -415,12 +436,26 @@
         const team2StrikeBtn = document.getElementById('team2-strike-btn');
         const nextQuestionBtn = document.getElementById('next-question-btn');
         const newGameBtn = document.getElementById('new-game-btn');
-        const strikes = [
-            document.getElementById('strike-1'),
-            document.getElementById('strike-2'),
-            document.getElementById('strike-3')
-        ];
+        const strikeContainer = document.getElementById('strike-container');
         const allRevealedMessage = document.getElementById('all-revealed');
+        
+        // Will store current strike elements
+        let strikes = [];
+
+        // Function to generate strike elements based on maxStrikes
+        function generateStrikeElements() {
+            strikeContainer.innerHTML = '';
+            
+            for (let i = 0; i < gameState.maxStrikes; i++) {
+                const strikeEl = document.createElement('div');
+                strikeEl.className = 'strike';
+                strikeEl.textContent = 'X';
+                strikeContainer.appendChild(strikeEl);
+            }
+            
+            // Update the strikes reference
+            strikes = Array.from(document.querySelectorAll('.strike'));
+        }
 
         // Add question to the game
         addQuestionBtn.addEventListener('click', () => {
@@ -512,6 +547,17 @@
             const team2Name = team2NameInput.value.trim() || 'Team 2';
             displayTeam1Name.textContent = team1Name;
             displayTeam2Name.textContent = team2Name;
+            
+            // Set max strikes (added)
+            const maxStrikes = parseInt(maxStrikesInput.value);
+            if (isNaN(maxStrikes) || maxStrikes < 1) {
+                gameState.maxStrikes = 3; // Default to 3 if invalid
+            } else {
+                gameState.maxStrikes = maxStrikes;
+            }
+            
+            // Generate strike elements based on settings
+            generateStrikeElements();
 
             // Switch to game view
             setupContainer.classList.add('hidden');
@@ -521,6 +567,8 @@
             gameState.currentQuestionIndex = 0;
             gameState.team1Score = 0;
             gameState.team2Score = 0;
+            team1ScoreDisplay.textContent = '0';
+            team2ScoreDisplay.textContent = '0';
             loadQuestion(0);
         });
 
@@ -650,13 +698,13 @@
         });
 
         function addStrike() {
-            if (gameState.currentStrikes < 3) {
+            if (gameState.currentStrikes < gameState.maxStrikes) {
                 gameState.currentStrikes++;
                 updateStrikesDisplay();
 
-                // If 3 strikes, optionally switch teams or move to next question
-                if (gameState.currentStrikes === 3) {
-                    if (confirm('3 strikes! Move to next question?')) {
+                // If max strikes reached, optionally switch teams or move to next question
+                if (gameState.currentStrikes === gameState.maxStrikes) {
+                    if (confirm(`${gameState.maxStrikes} strikes! Move to next question?`)) {
                         gameState.currentQuestionIndex++;
                         nextQuestionBtn.click();
                     }
@@ -679,9 +727,15 @@
             loadQuestion(gameState.currentQuestionIndex);
         });
 
-        // New game
+        // New game - FIXED: Reset scores when starting a new game
         newGameBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to start a new game?')) {
+                // Reset scores
+                gameState.team1Score = 0;
+                gameState.team2Score = 0;
+                team1ScoreDisplay.textContent = '0';
+                team2ScoreDisplay.textContent = '0';
+                
                 gameContainer.classList.add('hidden');
                 setupContainer.classList.remove('hidden');
                 
@@ -699,20 +753,21 @@
             }
             
             try {
-                // Get team names
+                // Get team names and game settings
                 const savedData = {
                     questions: gameState.questions,
                     team1Name: team1NameInput.value.trim() || 'Team 1',
-                    team2Name: team2NameInput.value.trim() || 'Team 2'
+                    team2Name: team2NameInput.value.trim() || 'Team 2',
+                    maxStrikes: parseInt(maxStrikesInput.value) || 3
                 };
                 
                 // Convert to JSON and save to localStorage
                 localStorage.setItem('familyFeudData', JSON.stringify(savedData));
                 
-                alert('Questions saved successfully! They will be available the next time you open this game.');
+                alert('Game data saved successfully! It will be available the next time you open this game.');
             } catch (error) {
-                alert('Error saving questions: ' + error.message);
-                console.error('Error saving questions:', error);
+                alert('Error saving data: ' + error.message);
+                console.error('Error saving data:', error);
             }
         });
         
@@ -722,7 +777,7 @@
                 const savedData = localStorage.getItem('familyFeudData');
                 
                 if (!savedData) {
-                    alert('No saved questions found. Add and save questions first.');
+                    alert('No saved game data found. Add questions and save first.');
                     return;
                 }
                 
@@ -731,6 +786,9 @@
                 // Restore team names
                 if (parsedData.team1Name) team1NameInput.value = parsedData.team1Name;
                 if (parsedData.team2Name) team2NameInput.value = parsedData.team2Name;
+                
+                // Restore max strikes setting
+                if (parsedData.maxStrikes) maxStrikesInput.value = parsedData.maxStrikes;
                 
                 // Restore questions
                 if (parsedData.questions && Array.isArray(parsedData.questions)) {
@@ -748,8 +806,8 @@
                     alert('No valid questions found in saved data.');
                 }
             } catch (error) {
-                alert('Error loading questions: ' + error.message);
-                console.error('Error loading questions:', error);
+                alert('Error loading data: ' + error.message);
+                console.error('Error loading data:', error);
             }
         });
         
