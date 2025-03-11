@@ -128,7 +128,7 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             transition: color 0.3s ease;
         }
-        .setup-container, .game-container {
+        .setup-container, .game-container, .final-score-container {
             background-color: var(--card-bg-color);
             border-radius: 10px;
             padding: 20px;
@@ -400,7 +400,8 @@
             color: white;
         }
         .setup-container.hidden, 
-        .game-container.hidden {
+        .game-container.hidden,
+        .final-score-container.hidden {
             display: none;
         }
         .all-revealed-message {
@@ -452,6 +453,76 @@
             max-width: 80%;
         }
         
+        /* Final Score Screen styles */
+        .final-score-container {
+            text-align: center;
+        }
+        .final-score-title {
+            font-size: var(--title-size);
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+        .final-scores {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .final-team {
+            background-color: var(--element-bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .final-team.winner {
+            background-color: var(--primary-color);
+            color: #000;
+        }
+        .final-team-name {
+            font-size: var(--subtitle-size);
+            margin-bottom: 15px;
+        }
+        .final-team-score {
+            font-size: calc(var(--subtitle-size) * 2);
+            font-weight: bold;
+        }
+        .final-result {
+            font-size: var(--subtitle-size);
+            color: var(--primary-color);
+            margin: 20px 0 30px;
+            font-weight: bold;
+        }
+        .return-home-btn {
+            background-color: var(--success-color);
+            padding: 15px 30px;
+            font-size: var(--large-text);
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        /* Game over modal */
+        #game-over-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg-color);
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+        
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -464,6 +535,9 @@
             }
             .new-game, .strike-btn {
                 grid-column: auto;
+            }
+            .final-scores {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -640,6 +714,48 @@
                 <button class="new-game" id="new-game-btn">New Game</button>
             </div>
         </div>
+
+        <!-- Final Score Screen -->
+        <div class="final-score-container hidden">
+            <h2 class="final-score-title">Game Over!</h2>
+            
+            <div class="final-scores">
+                <div class="final-team" id="final-team1">
+                    <div class="final-team-name" id="final-team1-name">Team 1</div>
+                    <div class="final-team-score" id="final-team1-score">0</div>
+                </div>
+                <div class="final-team" id="final-team2">
+                    <div class="final-team-name" id="final-team2-name">Team 2</div>
+                    <div class="final-team-score" id="final-team2-score">0</div>
+                </div>
+            </div>
+            
+            <div class="final-result" id="final-result">Winner!</div>
+            
+            <button class="return-home-btn" id="return-home-btn">Return to Home</button>
+        </div>
+        
+        <!-- Game Over Modal -->
+        <div id="game-over-modal">
+            <div class="modal-content">
+                <h2 class="final-score-title">Game Over!</h2>
+                
+                <div class="final-scores">
+                    <div class="final-team" id="final-team1">
+                        <div class="final-team-name" id="final-team1-name">Team 1</div>
+                        <div class="final-team-score" id="final-team1-score">0</div>
+                    </div>
+                    <div class="final-team" id="final-team2">
+                        <div class="final-team-name" id="final-team2-name">Team 2</div>
+                        <div class="final-team-score" id="final-team2-score">0</div>
+                    </div>
+                </div>
+                
+                <div class="final-result" id="final-result">Winner!</div>
+                
+                <button class="return-home-btn" id="return-home-btn">Return to Home</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -663,6 +779,7 @@
         // DOM elements
         const setupContainer = document.querySelector('.setup-container');
         const gameContainer = document.querySelector('.game-container');
+        const finalScoreContainer = document.querySelector('.final-score-container');
         const questionInput = document.getElementById('question-input');
         const answerGroupsContainer = document.getElementById('answer-groups');
         const addQuestionBtn = document.getElementById('add-question-btn');
@@ -698,6 +815,9 @@
         const strikeContainer = document.getElementById('strike-container');
         const allRevealedMessage = document.getElementById('all-revealed');
         const bonusMessage = document.getElementById('bonus-message');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const returnHomeBtn = document.getElementById('return-home-btn');
+
         
         // Will store current strike elements
         let strikes = [];
@@ -740,7 +860,53 @@
             }
         }
         
-        // Variable answer count handling
+        // Show final score screen
+        function showFinalScoreScreen() {
+            try {
+                // Get final scores
+                const finalTeam1Name = document.getElementById('final-team1-name');
+                const finalTeam2Name = document.getElementById('final-team2-name');
+                const finalTeam1Score = document.getElementById('final-team1-score');
+                const finalTeam2Score = document.getElementById('final-team2-score');
+                const finalResult = document.getElementById('final-result');
+                
+                // Update final score display
+                finalTeam1Name.textContent = displayTeam1Name.textContent;
+                finalTeam2Name.textContent = displayTeam2Name.textContent;
+                finalTeam1Score.textContent = gameState.team1Score;
+                finalTeam2Score.textContent = gameState.team2Score;
+                
+                // Determine winner
+                const team1Won = gameState.team1Score > gameState.team2Score;
+                const team2Won = gameState.team2Score > gameState.team1Score;
+                const isTie = gameState.team1Score === gameState.team2Score;
+                
+                // Reset winner classes
+                document.querySelectorAll('.final-team').forEach(el => el.classList.remove('winner'));
+                
+                // Display appropriate result message
+                if (isTie) {
+                    finalResult.textContent = "It's a tie!";
+                } else {
+                    finalResult.textContent = "Winner!";
+                    if (team1Won) {
+                        document.querySelectorAll('.final-team')[0].classList.add('winner');
+                    } else {
+                        document.querySelectorAll('.final-team')[1].classList.add('winner');
+                    }
+                }
+                
+                // Hide game container, show final score
+                gameContainer.classList.add('hidden');
+                finalScoreContainer.classList.remove('hidden');
+            } catch (error) {
+                console.error("Error showing final score:", error);
+                alert("Error showing final score. Returning to setup screen.");
+                gameContainer.classList.add('hidden');
+                setupContainer.classList.remove('hidden');
+                document.body.classList.remove('tv-mode');
+            }
+        }
         numAnswersSelect.addEventListener('change', function() {
             if (this.value === 'variable') {
                 gameState.variableAnswers = true;
@@ -994,6 +1160,7 @@
             // Switch to game view
             setupContainer.classList.add('hidden');
             gameContainer.classList.remove('hidden');
+            finalScoreContainer.classList.add('hidden');
 
             // Initialize game
             gameState.currentQuestionIndex = 0;
@@ -1025,11 +1192,8 @@
                 : gameState.currentQuestionIndex >= gameState.questions.length;
             
             if (isGameOver || index >= gameState.questions.length) {
-                showNotification('Game Over! All rounds have been played.', () => {
-                    // Return to setup screen
-                    gameContainer.classList.add('hidden');
-                    setupContainer.classList.remove('hidden');
-                });
+                // Show final score screen
+                showFinalScoreScreen();
                 return;
             }
 
@@ -1073,7 +1237,55 @@
             });
         }
         
-        // Show a notification with optional callback
+        // Show game over modal
+        function showGameOverModal() {
+            // Get the modal elements
+            const finalTeam1Name = document.getElementById('final-team1-name');
+            const finalTeam2Name = document.getElementById('final-team2-name');
+            const finalTeam1Score = document.getElementById('final-team1-score');
+            const finalTeam2Score = document.getElementById('final-team2-score');
+            const finalResult = document.getElementById('final-result');
+            const finalTeam1 = document.getElementById('final-team1');
+            const finalTeam2 = document.getElementById('final-team2');
+            
+            // Update team names and scores
+            finalTeam1Name.textContent = displayTeam1Name.textContent;
+            finalTeam2Name.textContent = displayTeam2Name.textContent;
+            finalTeam1Score.textContent = gameState.team1Score;
+            finalTeam2Score.textContent = gameState.team2Score;
+            
+            // Reset winner classes
+            finalTeam1.classList.remove('winner');
+            finalTeam2.classList.remove('winner');
+            
+            // Determine and display winner
+            if (gameState.team1Score > gameState.team2Score) {
+                finalResult.textContent = `${finalTeam1Name.textContent} Wins!`;
+                finalTeam1.classList.add('winner');
+            } else if (gameState.team2Score > gameState.team1Score) {
+                finalResult.textContent = `${finalTeam2Name.textContent} Wins!`;
+                finalTeam2.classList.add('winner');
+            } else {
+                finalResult.textContent = "It's a Tie!";
+            }
+            
+            // Show the modal
+            gameOverModal.style.display = 'flex';
+        }
+        
+        // Event listener for return home button
+        returnHomeBtn.addEventListener('click', function() {
+            // Hide game over screen
+            gameOverModal.style.display = 'none';
+            finalScoreContainer.classList.add('hidden');
+            
+            // Show setup screen
+            setupContainer.classList.remove('hidden');
+            
+            // Remove TV mode
+            document.body.classList.remove('tv-mode');
+        });
+        
         function showNotification(message, callback) {
             // Use the game notification for TV mode, alert for normal mode
             if (tvModeInput.checked) {
@@ -1092,6 +1304,8 @@
                 if (callback) callback();
             }
         }
+        
+        // Variable answer count handling
 
         // Reveal an answer
         function revealAnswer(index) {
@@ -1225,7 +1439,7 @@
             });
         }
 
-        // Next question - FIXED to move to the next question correctly
+        // Next question - Move to the next question
         nextQuestionBtn.addEventListener('click', () => {
             gameState.currentQuestionIndex++;
             gameState.currentRound++;
@@ -1233,7 +1447,7 @@
             loadQuestion(gameState.playOrder[gameState.currentQuestionIndex]);
         });
 
-        // New game - Reset scores and start from the first question
+        // New game - Return to setup screen
         newGameBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to start a new game?')) {
                 // Reset scores and question index
@@ -1246,6 +1460,7 @@
                 
                 // Return to the setup screen
                 gameContainer.classList.add('hidden');
+                finalScoreContainer.classList.add('hidden');
                 setupContainer.classList.remove('hidden');
                 
                 // Remove TV mode when returning to setup
