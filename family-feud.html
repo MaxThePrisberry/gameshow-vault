@@ -5,6 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Feud Game</title>
     <style>
+        :root {
+            /* Theme Variables - Classic (default) */
+            --primary-color: #FFD700;
+            --secondary-color: #FFC107;
+            --background-color: #1a1a1a;
+            --card-bg-color: #2a2a2a;
+            --element-bg-color: #333;
+            --highlight-color: #444;
+            --text-color: white;
+            --accent-color-1: #007bff;
+            --accent-color-2: #dc3545;
+            --success-color: #28a745;
+            
+            /* Font Sizes - Normal by default */
+            --title-size: 3rem;
+            --subtitle-size: 1.5rem;
+            --text-size: 1rem;
+            --large-text: 1.2rem;
+        }
+        
+        /* TV Mode */
+        body.tv-mode {
+            --title-size: 4.5rem;
+            --subtitle-size: 2.5rem;
+            --text-size: 1.5rem;
+            --large-text: 2rem;
+        }
+        
+        /* Blue Theme */
+        body.theme-blue {
+            --primary-color: #1E90FF;
+            --secondary-color: #00BFFF;
+            --accent-color-1: #4169E1;
+            --accent-color-2: #FF6347;
+        }
+        
+        /* Green Theme */
+        body.theme-green {
+            --primary-color: #32CD32;
+            --secondary-color: #00FA9A;
+            --accent-color-1: #228B22;
+            --accent-color-2: #FF6347;
+        }
+        
+        /* Purple Theme */
+        body.theme-purple {
+            --primary-color: #9370DB;
+            --secondary-color: #BA55D3;
+            --accent-color-1: #663399;
+            --accent-color-2: #FF6347;
+        }
+        
+        /* Red Theme */
+        body.theme-red {
+            --primary-color: #FF4500;
+            --secondary-color: #FF7F50;
+            --accent-color-1: #CD5C5C;
+            --accent-color-2: #4682B4;
+        }
+        
         * {
             box-sizing: border-box;
             font-family: 'Arial', sans-serif;
@@ -12,11 +72,12 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a;
-            color: white;
+            background-color: var(--background-color);
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            transition: background-color 0.3s ease;
         }
         .container {
             max-width: 1200px;
@@ -32,17 +93,19 @@
             margin-bottom: 20px;
         }
         h1 {
-            color: #FFD700;
-            font-size: 3rem;
+            color: var(--primary-color);
+            font-size: var(--title-size);
             margin-bottom: 0;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            transition: color 0.3s ease;
         }
         .setup-container, .game-container {
-            background-color: #2a2a2a;
+            background-color: var(--card-bg-color);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
         }
         .question-form {
             display: grid;
@@ -56,16 +119,27 @@
             gap: 10px;
             align-items: center;
         }
-        input, textarea, button {
+        .answer-groups-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        input, textarea, button, select {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #444;
-            background-color: #333;
-            color: white;
-            font-size: 1rem;
+            background-color: var(--element-bg-color);
+            color: var(--text-color);
+            font-size: var(--text-size);
+            transition: all 0.3s ease;
+        }
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
         }
         button {
-            background-color: #FFD700;
+            background-color: var(--primary-color);
             color: #000;
             cursor: pointer;
             font-weight: bold;
@@ -73,19 +147,20 @@
             transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #FFC107;
+            background-color: var(--secondary-color);
         }
         .questions-list {
             margin-top: 20px;
         }
         .question-item {
-            background-color: #333;
+            background-color: var(--element-bg-color);
             margin-bottom: 10px;
             padding: 10px;
             border-radius: 5px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background-color 0.3s ease;
         }
         .question-text {
             flex-grow: 1;
@@ -96,11 +171,24 @@
         .start-game {
             margin-top: 20px;
             padding: 15px;
-            font-size: 1.2rem;
-            background-color: #28a745;
+            font-size: var(--large-text);
+            background-color: var(--success-color);
         }
         .start-game:hover {
-            background-color: #218838;
+            opacity: 0.9;
+        }
+        .add-answer-btn {
+            background-color: var(--accent-color-1);
+            margin-bottom: 10px;
+        }
+        .remove-answer-btn {
+            background-color: var(--accent-color-2);
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .board {
             display: grid;
@@ -110,34 +198,43 @@
         }
         .question-display {
             text-align: center;
-            font-size: 1.5rem;
+            font-size: var(--subtitle-size);
             margin-bottom: 20px;
             padding: 15px;
-            background-color: #333;
+            background-color: var(--element-bg-color);
             border-radius: 5px;
             min-height: 70px;
             display: flex;
             justify-content: center;
             align-items: center;
+            transition: all 0.3s ease;
         }
         .answers {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
         }
+        /* TV mode can handle 2 columns of 4 answers (8 total) */
+        body.tv-mode .answers {
+            grid-template-columns: repeat(2, 1fr);
+        }
         .answer {
-            background-color: #444;
+            background-color: var(--highlight-color);
             height: 80px;
             border-radius: 5px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 15px;
-            font-size: 1.2rem;
+            font-size: var(--large-text);
             overflow: hidden;
             position: relative;
             cursor: pointer;
             user-select: none;
+            transition: all 0.3s ease;
+        }
+        body.tv-mode .answer {
+            height: 100px;
         }
         .answer.revealed .answer-text, 
         .answer.revealed .answer-votes {
@@ -150,20 +247,24 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: #FFD700;
+            background-color: var(--primary-color);
             color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 2rem;
             font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        body.tv-mode .answer:not(.revealed)::before {
+            font-size: 3rem;
         }
         .answer-text {
             opacity: 0;
             transition: opacity 0.5s;
         }
         .answer-votes {
-            background-color: #FFD700;
+            background-color: var(--primary-color);
             color: #000;
             padding: 5px 10px;
             border-radius: 50%;
@@ -176,6 +277,21 @@
             justify-content: center;
             align-items: center;
         }
+        body.tv-mode .answer-votes {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+        .all-revealed-bonus {
+            background-color: var(--primary-color);
+            color: #000;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
         .teams {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -183,19 +299,21 @@
             margin-bottom: 20px;
         }
         .team {
-            background-color: #333;
+            background-color: var(--element-bg-color);
             padding: 15px;
             border-radius: 5px;
             text-align: center;
+            transition: all 0.3s ease;
         }
         .team-name {
-            font-size: 1.5rem;
+            font-size: var(--subtitle-size);
             margin-bottom: 10px;
         }
         .team-score {
-            font-size: 2rem;
+            font-size: calc(var(--subtitle-size) * 1.5);
             font-weight: bold;
-            color: #FFD700;
+            color: var(--primary-color);
+            transition: color 0.3s ease;
         }
         .controls {
             display: grid;
@@ -203,22 +321,26 @@
             gap: 15px;
         }
         .team1-votes {
-            background-color: #007bff;
+            background-color: var(--accent-color-1);
         }
         .team2-votes {
-            background-color: #dc3545;
+            background-color: var(--accent-color-2);
         }
         .strike-btn {
-            background-color: #dc3545;
+            background-color: var(--accent-color-2);
             grid-column: span 3;
         }
         .next-question {
-            background-color: #28a745;
+            background-color: var(--success-color);
         }
         .new-game {
             grid-column: span 3;
             background-color: #6c757d;
             margin-top: 10px;
+        }
+        body.tv-mode .controls button {
+            padding: 15px;
+            font-size: var(--large-text);
         }
         .strike-container {
             display: flex;
@@ -230,15 +352,22 @@
             height: 50px;
             margin: 0 10px;
             border-radius: 50%;
-            background-color: #444;
+            background-color: var(--highlight-color);
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 2rem;
             font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        body.tv-mode .strike {
+            width: 80px;
+            height: 80px;
+            font-size: 3rem;
+            margin: 0 15px;
         }
         .strike.active {
-            background-color: #dc3545;
+            background-color: var(--accent-color-2);
             color: white;
         }
         .setup-container.hidden, 
@@ -247,10 +376,11 @@
         }
         .all-revealed-message {
             text-align: center;
-            color: #FFD700;
-            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-size: var(--subtitle-size);
             margin: 20px 0;
             display: none;
+            transition: color 0.3s ease;
         }
         .game-settings {
             display: flex;
@@ -267,6 +397,15 @@
         .action-button {
             margin-top: 10px;
             background-color: #17a2b8;
+        }
+        
+        /* Round counter display */
+        .round-display {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: var(--subtitle-size);
+            margin-bottom: 15px;
+            font-weight: bold;
         }
         @media (max-width: 768px) {
             h1 {
@@ -296,21 +435,26 @@
             <!-- Question Input Form -->
             <div class="question-form">
                 <input type="text" id="question-input" placeholder="Enter a question..." required>
-                <div class="answer-group">
-                    <input type="text" class="answer-input" placeholder="Answer 1" required>
-                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
+                <div class="answer-groups-container" id="answer-groups">
+                    <div class="answer-group">
+                        <input type="text" class="answer-input" placeholder="Answer 1" required>
+                        <input type="number" class="votes-input" placeholder="Votes" min="1" required>
+                    </div>
+                    <div class="answer-group">
+                        <input type="text" class="answer-input" placeholder="Answer 2" required>
+                        <input type="number" class="votes-input" placeholder="Votes" min="1" required>
+                    </div>
+                    <div class="answer-group">
+                        <input type="text" class="answer-input" placeholder="Answer 3" required>
+                        <input type="number" class="votes-input" placeholder="Votes" min="1" required>
+                    </div>
+                    <div class="answer-group">
+                        <input type="text" class="answer-input" placeholder="Answer 4" required>
+                        <input type="number" class="votes-input" placeholder="Votes" min="1" required>
+                    </div>
                 </div>
-                <div class="answer-group">
-                    <input type="text" class="answer-input" placeholder="Answer 2" required>
-                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
-                </div>
-                <div class="answer-group">
-                    <input type="text" class="answer-input" placeholder="Answer 3" required>
-                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
-                </div>
-                <div class="answer-group">
-                    <input type="text" class="answer-input" placeholder="Answer 4" required>
-                    <input type="number" class="votes-input" placeholder="Votes" min="1" required>
+                <div id="variable-answers-controls" style="display: none;">
+                    <button id="add-answer-field-btn" class="add-answer-btn">+ Add Another Answer</button>
                 </div>
                 <button id="add-question-btn">Add Question</button>
             </div>
@@ -331,17 +475,62 @@
             <!-- Game Settings -->
             <div class="question-form" style="margin-top: 20px;">
                 <h3>Game Settings</h3>
+                
+                <!-- Basic Game Rules -->
                 <div class="game-settings">
                     <label for="max-strikes">Number of Strikes:</label>
                     <input type="number" id="max-strikes" min="1" max="10" value="3">
                 </div>
+                
+                <div class="game-settings">
+                    <label for="bonus-points">Bonus Points for All Answers:</label>
+                    <input type="number" id="bonus-points" min="0" max="1000" value="0" placeholder="0 = disabled">
+                </div>
+                
+                <div class="game-settings">
+                    <label for="num-rounds">Number of Rounds:</label>
+                    <input type="number" id="num-rounds" min="1" max="100" placeholder="All questions">
+                </div>
+                
+                <div class="game-settings">
+                    <input type="checkbox" id="randomize-questions">
+                    <label for="randomize-questions">Randomize Question Order</label>
+                </div>
+                
+                <!-- Variable Answer Count -->
+                <div class="game-settings">
+                    <label for="num-answers">Number of Answers per Question:</label>
+                    <select id="num-answers">
+                        <option value="4" selected>4 (Default)</option>
+                        <option value="variable">Variable (2-8)</option>
+                    </select>
+                </div>
+                
+                <!-- Theme Selection -->
+                <div class="game-settings">
+                    <label for="theme-select">Color Theme:</label>
+                    <select id="theme-select">
+                        <option value="classic" selected>Classic (Gold/Black)</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="purple">Purple</option>
+                        <option value="red">Red</option>
+                    </select>
+                </div>
+                
+                <!-- TV Mode Option -->
+                <div class="game-settings">
+                    <input type="checkbox" id="tv-mode">
+                    <label for="tv-mode">TV Mode (larger text, optimized for big screens)</label>
+                </div>
             </div>
 
             <!-- Save/Load Questions -->
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
                 <button id="save-questions-btn" style="background-color: #007bff;">Save Questions</button>
                 <button id="load-questions-btn" style="background-color: #6c757d;">Load Saved Questions</button>
                 <button id="download-cheatsheet-btn" style="background-color: #17a2b8;">Download Cheat Sheet</button>
+                <button id="delete-all-questions-btn" style="background-color: #dc3545;">Delete All Questions</button>
             </div>
 
             <!-- Start Game Button -->
@@ -350,6 +539,11 @@
 
         <!-- Game Board Screen -->
         <div class="game-container hidden">
+            <!-- Round Display -->
+            <div class="round-display" id="round-display">
+                Round 1
+            </div>
+            
             <!-- Current Question -->
             <div class="question-display" id="current-question">
                 Question will appear here
@@ -369,6 +563,10 @@
 
             <div class="all-revealed-message" id="all-revealed">
                 All answers have been revealed!
+            </div>
+            
+            <div class="all-revealed-bonus" id="bonus-message">
+                BONUS! +0 points for revealing all answers!
             </div>
 
             <!-- Teams Score -->
@@ -402,28 +600,43 @@
             team1Score: 0,
             team2Score: 0,
             currentStrikes: 0,
-            maxStrikes: 3, // Default value, now can be customized
-            revealedAnswers: []
+            maxStrikes: 3, // Default value, can be customized
+            revealedAnswers: [],
+            bonusPoints: 0, // Bonus points for revealing all answers
+            maxRounds: null, // Number of rounds (null = use all questions)
+            randomizeQuestions: false, // Whether to randomize question order
+            variableAnswers: false, // Whether to allow variable number of answers
+            playOrder: [], // Array of indices for question order
+            currentRound: 1 // Current round number
         };
 
         // DOM elements
         const setupContainer = document.querySelector('.setup-container');
         const gameContainer = document.querySelector('.game-container');
         const questionInput = document.getElementById('question-input');
-        const answerInputs = document.querySelectorAll('.answer-input');
-        const votesInputs = document.querySelectorAll('.votes-input');
+        const answerGroupsContainer = document.getElementById('answer-groups');
         const addQuestionBtn = document.getElementById('add-question-btn');
         const questionsContainer = document.getElementById('questions-container');
         const startGameBtn = document.getElementById('start-game-btn');
         const saveQuestionsBtn = document.getElementById('save-questions-btn');
         const loadQuestionsBtn = document.getElementById('load-questions-btn');
         const downloadCheatsheetBtn = document.getElementById('download-cheatsheet-btn');
+        const deleteAllQuestionsBtn = document.getElementById('delete-all-questions-btn');
         const team1NameInput = document.getElementById('team1-name');
         const team2NameInput = document.getElementById('team2-name');
         const maxStrikesInput = document.getElementById('max-strikes');
+        const bonusPointsInput = document.getElementById('bonus-points');
+        const numRoundsInput = document.getElementById('num-rounds');
+        const randomizeQuestionsInput = document.getElementById('randomize-questions');
+        const numAnswersSelect = document.getElementById('num-answers');
+        const themeSelect = document.getElementById('theme-select');
+        const tvModeInput = document.getElementById('tv-mode');
+        const addAnswerFieldBtn = document.getElementById('add-answer-field-btn');
+        const variableAnswersControls = document.getElementById('variable-answers-controls');
         const displayTeam1Name = document.getElementById('display-team1-name');
         const displayTeam2Name = document.getElementById('display-team2-name');
         const currentQuestionDisplay = document.getElementById('current-question');
+        const roundDisplay = document.getElementById('round-display');
         const answersBoard = document.getElementById('answers-board');
         const team1ScoreDisplay = document.getElementById('team1-score');
         const team2ScoreDisplay = document.getElementById('team2-score');
@@ -434,6 +647,7 @@
         const newGameBtn = document.getElementById('new-game-btn');
         const strikeContainer = document.getElementById('strike-container');
         const allRevealedMessage = document.getElementById('all-revealed');
+        const bonusMessage = document.getElementById('bonus-message');
         
         // Will store current strike elements
         let strikes = [];
@@ -452,6 +666,90 @@
             // Update the strikes reference
             strikes = Array.from(document.querySelectorAll('.strike'));
         }
+        
+        // Theme handling
+        themeSelect.addEventListener('change', updateTheme);
+        tvModeInput.addEventListener('change', updateTVMode);
+        
+        function updateTheme() {
+            // First reset all theme classes
+            document.body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-red');
+            
+            // Apply the selected theme
+            const theme = themeSelect.value;
+            if (theme !== 'classic') {
+                document.body.classList.add(`theme-${theme}`);
+            }
+        }
+        
+        function updateTVMode() {
+            if (tvModeInput.checked) {
+                document.body.classList.add('tv-mode');
+            } else {
+                document.body.classList.remove('tv-mode');
+            }
+        }
+        
+        // Variable answer count handling
+        numAnswersSelect.addEventListener('change', function() {
+            if (this.value === 'variable') {
+                gameState.variableAnswers = true;
+                variableAnswersControls.style.display = 'block';
+            } else {
+                gameState.variableAnswers = false;
+                variableAnswersControls.style.display = 'none';
+                
+                // Reset to exactly 4 answer fields
+                answerGroupsContainer.innerHTML = '';
+                for (let i = 0; i < 4; i++) {
+                    addAnswerField(i + 1);
+                }
+            }
+        });
+        
+        // Add new answer field
+        addAnswerFieldBtn.addEventListener('click', function() {
+            const currentAnswerCount = answerGroupsContainer.children.length;
+            if (currentAnswerCount < 8) { // Limit to 8 answers max
+                addAnswerField(currentAnswerCount + 1);
+            } else {
+                alert('Maximum 8 answers allowed per question');
+            }
+        });
+        
+        function addAnswerField(number) {
+            const answerGroup = document.createElement('div');
+            answerGroup.className = 'answer-group';
+            
+            const answerInput = document.createElement('input');
+            answerInput.type = 'text';
+            answerInput.className = 'answer-input';
+            answerInput.placeholder = `Answer ${number}`;
+            answerInput.required = number <= 4; // First 4 are required
+            
+            const votesInput = document.createElement('input');
+            votesInput.type = 'number';
+            votesInput.className = 'votes-input';
+            votesInput.placeholder = 'Votes';
+            votesInput.min = 1;
+            votesInput.required = number <= 4; // First 4 are required
+            
+            answerGroup.appendChild(answerInput);
+            answerGroup.appendChild(votesInput);
+            
+            // Add remove button for answers beyond the first 2
+            if (number > 2) {
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-answer-btn';
+                removeBtn.textContent = 'X';
+                removeBtn.addEventListener('click', function() {
+                    answerGroupsContainer.removeChild(answerGroup);
+                });
+                answerGroup.appendChild(removeBtn);
+            }
+            
+            answerGroupsContainer.appendChild(answerGroup);
+        }
 
         // Add question to the game
         addQuestionBtn.addEventListener('click', () => {
@@ -463,25 +761,44 @@
 
             const answers = [];
             let isValid = true;
-
-            // Validate all answers have text and votes
-            for (let i = 0; i < 4; i++) {
-                const answerText = answerInputs[i].value.trim();
-                const votes = parseInt(votesInputs[i].value);
-
-                if (!answerText || isNaN(votes) || votes <= 0) {
+            
+            // Get all answer groups
+            const answerGroups = answerGroupsContainer.querySelectorAll('.answer-group');
+            
+            // Validate required answers have text and votes
+            answerGroups.forEach((group, index) => {
+                const answerInput = group.querySelector('.answer-input');
+                const votesInput = group.querySelector('.votes-input');
+                
+                if (!answerInput || !votesInput) return;
+                
+                const answerText = answerInput.value.trim();
+                const votes = parseInt(votesInput.value);
+                
+                // First 2 answers are always required
+                const isRequired = index < 2 || answerInput.required;
+                
+                if (isRequired && (!answerText || isNaN(votes) || votes <= 0)) {
                     isValid = false;
-                    alert(`Please fill in all answers and votes`);
-                    break;
+                    alert(`Please fill in all required answers and votes`);
+                    return;
                 }
+                
+                // Add non-empty answers
+                if (answerText && !isNaN(votes) && votes > 0) {
+                    answers.push({
+                        text: answerText,
+                        votes: votes
+                    });
+                }
+            });
 
-                answers.push({
-                    text: answerText,
-                    votes: votes
-                });
+            if (!isValid || answers.length < 2) {
+                if (answers.length < 2) {
+                    alert('You need at least 2 answers for a question');
+                }
+                return;
             }
-
-            if (!isValid) return;
 
             // Sort answers by votes (highest first), then alphabetically for ties
             answers.sort((a, b) => {
@@ -503,8 +820,23 @@
 
             // Clear the form
             questionInput.value = '';
-            answerInputs.forEach(input => input.value = '');
-            votesInputs.forEach(input => input.value = '');
+            
+            // Reset answer fields based on current mode
+            if (gameState.variableAnswers) {
+                // Keep the structure but clear values
+                answerGroups.forEach(group => {
+                    const answerInput = group.querySelector('.answer-input');
+                    const votesInput = group.querySelector('.votes-input');
+                    if (answerInput) answerInput.value = '';
+                    if (votesInput) votesInput.value = '';
+                });
+            } else {
+                // Reset to exactly 4 answer fields
+                answerGroupsContainer.innerHTML = '';
+                for (let i = 0; i < 4; i++) {
+                    addAnswerField(i + 1);
+                }
+            }
         });
 
         // Display question in the list
@@ -557,6 +889,38 @@
                 gameState.maxStrikes = maxStrikes;
             }
             
+            // Set bonus points
+            const bonusPoints = parseInt(bonusPointsInput.value);
+            gameState.bonusPoints = isNaN(bonusPoints) ? 0 : bonusPoints;
+            
+            // Set number of rounds
+            const numRounds = parseInt(numRoundsInput.value);
+            if (!isNaN(numRounds) && numRounds > 0) {
+                gameState.maxRounds = Math.min(numRounds, gameState.questions.length);
+            } else {
+                gameState.maxRounds = null; // Use all questions
+            }
+            
+            // Set randomize questions
+            gameState.randomizeQuestions = randomizeQuestionsInput.checked;
+            
+            // Create play order
+            if (gameState.randomizeQuestions) {
+                // Create array of indices and shuffle it
+                gameState.playOrder = Array.from({ length: gameState.questions.length }, (_, i) => i);
+                // Fisher-Yates shuffle
+                for (let i = gameState.playOrder.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [gameState.playOrder[i], gameState.playOrder[j]] = [gameState.playOrder[j], gameState.playOrder[i]];
+                }
+            } else {
+                // Just use sequential order
+                gameState.playOrder = Array.from({ length: gameState.questions.length }, (_, i) => i);
+            }
+            
+            // Apply TV mode if checked
+            updateTVMode();
+            
             // Generate strike elements based on settings
             generateStrikeElements();
 
@@ -566,17 +930,38 @@
 
             // Initialize game
             gameState.currentQuestionIndex = 0;
+            gameState.currentRound = 1;
             gameState.team1Score = 0;
             gameState.team2Score = 0;
             team1ScoreDisplay.textContent = '0';
             team2ScoreDisplay.textContent = '0';
-            loadQuestion(0);
+            
+            updateRoundDisplay();
+            loadQuestion(gameState.playOrder[0]);
         });
 
+        // Update round display
+        function updateRoundDisplay() {
+            // If max rounds is set, show "Round X of Y"
+            if (gameState.maxRounds) {
+                roundDisplay.textContent = `Round ${gameState.currentRound} of ${gameState.maxRounds}`;
+            } else {
+                roundDisplay.textContent = `Round ${gameState.currentRound}`;
+            }
+        }
+        
         // Load a question into the game board
         function loadQuestion(index) {
-            if (index >= gameState.questions.length) {
-                alert('Game Over! All questions have been played.');
+            // Check if we've reached the end based on maxRounds or all questions
+            const isGameOver = gameState.maxRounds 
+                ? gameState.currentRound > gameState.maxRounds 
+                : gameState.currentQuestionIndex >= gameState.questions.length;
+            
+            if (isGameOver || index >= gameState.questions.length) {
+                alert('Game Over! All rounds have been played.');
+                // Return to setup screen
+                gameContainer.classList.add('hidden');
+                setupContainer.classList.remove('hidden');
                 return;
             }
 
@@ -584,6 +969,7 @@
             gameState.currentStrikes = 0;
             gameState.revealedAnswers = [];
             allRevealedMessage.style.display = 'none';
+            bonusMessage.style.display = 'none';
             
             // Update strikes display
             updateStrikesDisplay();
@@ -621,7 +1007,9 @@
 
         // Reveal an answer
         function revealAnswer(index) {
-            const currentQuestion = gameState.questions[gameState.currentQuestionIndex];
+            // Get the actual question index based on play order
+            const questionIndex = gameState.playOrder[gameState.currentQuestionIndex];
+            const currentQuestion = gameState.questions[questionIndex];
             const answerElements = document.querySelectorAll('.answer');
             
             // Skip if already revealed
@@ -638,6 +1026,12 @@
             // Check if all answers are revealed
             if (gameState.revealedAnswers.length === currentQuestion.answers.length) {
                 allRevealedMessage.style.display = 'block';
+                
+                // Show bonus message if bonus points are enabled
+                if (gameState.bonusPoints > 0) {
+                    bonusMessage.textContent = `BONUS! +${gameState.bonusPoints} points for revealing all answers!`;
+                    bonusMessage.style.display = 'block';
+                }
             }
         }
 
@@ -648,7 +1042,9 @@
                 return;
             }
 
-            const currentQuestion = gameState.questions[gameState.currentQuestionIndex];
+            // Get the actual question index based on play order
+            const questionIndex = gameState.playOrder[gameState.currentQuestionIndex];
+            const currentQuestion = gameState.questions[questionIndex];
             let roundVotes = 0;
 
             // Sum votes from all revealed answers
@@ -656,13 +1052,20 @@
                 roundVotes += currentQuestion.answers[index].votes;
             });
 
+            // Add bonus points if all answers revealed
+            if (gameState.revealedAnswers.length === currentQuestion.answers.length && gameState.bonusPoints > 0) {
+                roundVotes += gameState.bonusPoints;
+            }
+            
             // Add to team score
             gameState.team1Score += roundVotes;
             team1ScoreDisplay.textContent = gameState.team1Score;
 
-            // Move to next question
+            // Move to next round/question
             gameState.currentQuestionIndex++;
-            loadQuestion(gameState.currentQuestionIndex);
+            gameState.currentRound++;
+            updateRoundDisplay();
+            loadQuestion(gameState.playOrder[gameState.currentQuestionIndex]);
         });
 
         team2AddBtn.addEventListener('click', () => {
@@ -671,21 +1074,30 @@
                 return;
             }
 
-            const currentQuestion = gameState.questions[gameState.currentQuestionIndex];
+            // Get the actual question index based on play order
+            const questionIndex = gameState.playOrder[gameState.currentQuestionIndex];
+            const currentQuestion = gameState.questions[questionIndex];
             let roundVotes = 0;
 
             // Sum votes from all revealed answers
             gameState.revealedAnswers.forEach(index => {
                 roundVotes += currentQuestion.answers[index].votes;
             });
+            
+            // Add bonus points if all answers revealed
+            if (gameState.revealedAnswers.length === currentQuestion.answers.length && gameState.bonusPoints > 0) {
+                roundVotes += gameState.bonusPoints;
+            }
 
             // Add to team score
             gameState.team2Score += roundVotes;
             team2ScoreDisplay.textContent = gameState.team2Score;
 
-            // Move to next question
+            // Move to next round/question
             gameState.currentQuestionIndex++;
-            loadQuestion(gameState.currentQuestionIndex);
+            gameState.currentRound++;
+            updateRoundDisplay();
+            loadQuestion(gameState.playOrder[gameState.currentQuestionIndex]);
         });
 
         // Handle strikes (now with a single button)
@@ -698,7 +1110,9 @@
                 if (gameState.currentStrikes === gameState.maxStrikes) {
                     if (confirm(`${gameState.maxStrikes} strikes! Move to next question?`)) {
                         gameState.currentQuestionIndex++;
-                        loadQuestion(gameState.currentQuestionIndex);
+                        gameState.currentRound++;
+                        updateRoundDisplay();
+                        loadQuestion(gameState.playOrder[gameState.currentQuestionIndex]);
                     }
                 }
             }
@@ -717,7 +1131,9 @@
         // Next question - FIXED to move to the next question correctly
         nextQuestionBtn.addEventListener('click', () => {
             gameState.currentQuestionIndex++;
-            loadQuestion(gameState.currentQuestionIndex);
+            gameState.currentRound++;
+            updateRoundDisplay();
+            loadQuestion(gameState.playOrder[gameState.currentQuestionIndex]);
         });
 
         // New game - Reset scores and start from the first question
@@ -727,11 +1143,21 @@
                 gameState.team1Score = 0;
                 gameState.team2Score = 0;
                 gameState.currentQuestionIndex = 0; // Reset question index to start at beginning
+                gameState.currentRound = 1; // Reset round counter
                 team1ScoreDisplay.textContent = '0';
                 team2ScoreDisplay.textContent = '0';
                 
-                gameContainer.classList.add('hidden');
-                setupContainer.classList.remove('hidden');
+                // If randomized questions are enabled, re-shuffle the play order
+                if (gameState.randomizeQuestions) {
+                    // Fisher-Yates shuffle
+                    for (let i = gameState.playOrder.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [gameState.playOrder[i], gameState.playOrder[j]] = [gameState.playOrder[j], gameState.playOrder[i]];
+                    }
+                }
+                
+                updateRoundDisplay();
+                loadQuestion(gameState.playOrder[0]);
             }
         });
         
@@ -779,7 +1205,13 @@
                     questions: gameState.questions,
                     team1Name: team1NameInput.value.trim() || 'Team 1',
                     team2Name: team2NameInput.value.trim() || 'Team 2',
-                    maxStrikes: parseInt(maxStrikesInput.value) || 3
+                    maxStrikes: parseInt(maxStrikesInput.value) || 3,
+                    bonusPoints: parseInt(bonusPointsInput.value) || 0,
+                    theme: themeSelect.value,
+                    tvMode: tvModeInput.checked,
+                    variableAnswers: numAnswersSelect.value === 'variable',
+                    numRounds: numRoundsInput.value ? parseInt(numRoundsInput.value) : null,
+                    randomizeQuestions: randomizeQuestionsInput.checked
                 };
                 
                 // Convert to JSON and save to localStorage
@@ -808,8 +1240,25 @@
                 if (parsedData.team1Name) team1NameInput.value = parsedData.team1Name;
                 if (parsedData.team2Name) team2NameInput.value = parsedData.team2Name;
                 
-                // Restore max strikes setting
+                // Restore game settings
                 if (parsedData.maxStrikes) maxStrikesInput.value = parsedData.maxStrikes;
+                if (parsedData.bonusPoints !== undefined) bonusPointsInput.value = parsedData.bonusPoints;
+                if (parsedData.numRounds) numRoundsInput.value = parsedData.numRounds;
+                if (parsedData.randomizeQuestions !== undefined) randomizeQuestionsInput.checked = parsedData.randomizeQuestions;
+                if (parsedData.variableAnswers !== undefined) {
+                    numAnswersSelect.value = parsedData.variableAnswers ? 'variable' : '4';
+                    // Trigger the change event to update UI
+                    const event = new Event('change');
+                    numAnswersSelect.dispatchEvent(event);
+                }
+                if (parsedData.theme) {
+                    themeSelect.value = parsedData.theme;
+                    updateTheme();
+                }
+                if (parsedData.tvMode !== undefined) {
+                    tvModeInput.checked = parsedData.tvMode;
+                    updateTVMode();
+                }
                 
                 // Restore questions
                 if (parsedData.questions && Array.isArray(parsedData.questions)) {
@@ -829,6 +1278,20 @@
             } catch (error) {
                 alert('Error loading data: ' + error.message);
                 console.error('Error loading data:', error);
+            }
+        });
+        
+        // Delete all questions
+        deleteAllQuestionsBtn.addEventListener('click', () => {
+            if (gameState.questions.length === 0) {
+                alert('No questions to delete.');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to delete all ${gameState.questions.length} questions? This cannot be undone.`)) {
+                gameState.questions = [];
+                renderQuestionsList();
+                alert('All questions have been deleted.');
             }
         });
         
