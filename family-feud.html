@@ -651,6 +651,13 @@
                 <button id="download-cheatsheet-btn" style="background-color: #17a2b8;">Download Cheat Sheet</button>
                 <button id="delete-all-questions-btn" style="background-color: #dc3545;">Delete All Questions</button>
             </div>
+            
+            <!-- Export/Import Questions -->
+            <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
+                <button id="export-questions-btn" style="background-color: #28a745;">Export Questions</button>
+                <button id="import-questions-btn" style="background-color: #fd7e14;">Import Questions</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
 
             <!-- Start Game Button -->
             <button class="start-game" id="start-game-btn">Start Game</button>
@@ -1210,9 +1217,16 @@
             const question = gameState.questions[index];
             currentQuestionDisplay.textContent = question.text;
 
+            // Filter answers based on the answer count setting
+            let answersToDisplay = question.answers;
+            if (!gameState.variableAnswers && answersToDisplay.length > 4) {
+                // If using fixed 4 answers mode, only use the top 4 answers by votes
+                answersToDisplay = answersToDisplay.slice(0, 4);
+            }
+
             // Create answer board
             answersBoard.innerHTML = '';
-            question.answers.forEach((answer, answerIndex) => {
+            answersToDisplay.forEach((answer, answerIndex) => {
                 const answerEl = document.createElement('div');
                 answerEl.className = 'answer';
                 answerEl.dataset.index = answerIndex;
@@ -1325,8 +1339,13 @@
             // Reveal in UI
             answerElements[index].classList.add('revealed');
 
+            // Get the number of answers currently being displayed
+            const displayedAnswerCount = !gameState.variableAnswers && currentQuestion.answers.length > 4 
+                ? 4 
+                : currentQuestion.answers.length;
+
             // Check if all answers are revealed
-            if (gameState.revealedAnswers.length === currentQuestion.answers.length) {
+            if (gameState.revealedAnswers.length === displayedAnswerCount) {
                 if (tvModeInput.checked) {
                     // In TV mode, show a combined notification
                     const message = gameState.bonusPoints > 0 
@@ -1346,7 +1365,7 @@
             }
         }
 
-        // Add votes to team
+        // Add votes to team 1
         team1AddBtn.addEventListener('click', () => {
             if (gameState.revealedAnswers.length === 0) {
                 alert('Reveal at least one answer first!');
@@ -1356,15 +1375,22 @@
             // Get the actual question index based on play order
             const questionIndex = gameState.playOrder[gameState.currentQuestionIndex];
             const currentQuestion = gameState.questions[questionIndex];
+            
+            // Get the answers being displayed
+            let answersToUse = currentQuestion.answers;
+            if (!gameState.variableAnswers && answersToUse.length > 4) {
+                answersToUse = answersToUse.slice(0, 4);
+            }
+            
             let roundVotes = 0;
 
             // Sum votes from all revealed answers
             gameState.revealedAnswers.forEach(index => {
-                roundVotes += currentQuestion.answers[index].votes;
+                roundVotes += answersToUse[index].votes;
             });
 
             // Add bonus points if all answers revealed
-            if (gameState.revealedAnswers.length === currentQuestion.answers.length && gameState.bonusPoints > 0) {
+            if (gameState.revealedAnswers.length === answersToUse.length && gameState.bonusPoints > 0) {
                 roundVotes += gameState.bonusPoints;
             }
             
@@ -1379,6 +1405,7 @@
             loadQuestion(gameState.playOrder[gameState.currentQuestionIndex]);
         });
 
+        // Add votes to team 2
         team2AddBtn.addEventListener('click', () => {
             if (gameState.revealedAnswers.length === 0) {
                 alert('Reveal at least one answer first!');
@@ -1388,15 +1415,22 @@
             // Get the actual question index based on play order
             const questionIndex = gameState.playOrder[gameState.currentQuestionIndex];
             const currentQuestion = gameState.questions[questionIndex];
+            
+            // Get the answers being displayed
+            let answersToUse = currentQuestion.answers;
+            if (!gameState.variableAnswers && answersToUse.length > 4) {
+                answersToUse = answersToUse.slice(0, 4);
+            }
+            
             let roundVotes = 0;
 
             // Sum votes from all revealed answers
             gameState.revealedAnswers.forEach(index => {
-                roundVotes += currentQuestion.answers[index].votes;
+                roundVotes += answersToUse[index].votes;
             });
             
             // Add bonus points if all answers revealed
-            if (gameState.revealedAnswers.length === currentQuestion.answers.length && gameState.bonusPoints > 0) {
+            if (gameState.revealedAnswers.length === answersToUse.length && gameState.bonusPoints > 0) {
                 roundVotes += gameState.bonusPoints;
             }
 
@@ -1600,6 +1634,140 @@
                 renderQuestionsList();
                 alert('All questions have been deleted.');
             }
+        });
+        
+        // Export questions to a JSON file
+        const exportQuestionsBtn = document.getElementById('export-questions-btn');
+        exportQuestionsBtn.addEventListener('click', () => {
+            if (gameState.questions.length === 0) {
+                alert('No questions to export. Please add questions first.');
+                return;
+            }
+            
+            try {
+                // Get game data including settings
+                const exportData = {
+                    questions: gameState.questions,
+                    team1Name: team1NameInput.value.trim() || 'Team 1',
+                    team2Name: team2NameInput.value.trim() || 'Team 2',
+                    maxStrikes: parseInt(maxStrikesInput.value) || 3,
+                    bonusPoints: parseInt(bonusPointsInput.value) || 0,
+                    numRounds: numRoundsInput.value ? parseInt(numRoundsInput.value) : null,
+                    randomizeQuestions: randomizeQuestionsInput.checked,
+                    variableAnswers: numAnswersSelect.value === 'variable',
+                    exportDate: new Date().toISOString(),
+                    version: '1.0'
+                };
+                
+                // Convert to JSON string
+                const jsonString = JSON.stringify(exportData, null, 2);
+                
+                // Create a download link
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonString));
+                element.setAttribute('download', 'family-feud-questions.json');
+                
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                
+                element.click();
+                
+                document.body.removeChild(element);
+                
+                alert(`Successfully exported ${gameState.questions.length} questions!`);
+            } catch (error) {
+                alert('Error exporting questions: ' + error.message);
+                console.error('Error exporting questions:', error);
+            }
+        });
+        
+        // Import questions from a JSON file
+        const importQuestionsBtn = document.getElementById('import-questions-btn');
+        const importFileInput = document.getElementById('import-file');
+        
+        importQuestionsBtn.addEventListener('click', () => {
+            // Trigger file input click
+            importFileInput.click();
+        });
+        
+        importFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check if it's a JSON file
+            if (!file.name.endsWith('.json')) {
+                alert('Please select a valid JSON file.');
+                importFileInput.value = ''; // Reset the input
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validate the imported data
+                    if (!importedData.questions || !Array.isArray(importedData.questions) || importedData.questions.length === 0) {
+                        alert('Invalid question data in the file.');
+                        return;
+                    }
+                    
+                    // Check if there are existing questions
+                    if (gameState.questions.length > 0) {
+                        if (!confirm(`You have ${gameState.questions.length} existing questions. Do you want to replace them with the ${importedData.questions.length} imported questions?`)) {
+                            if (confirm('Would you like to merge the imported questions with your existing ones instead?')) {
+                                // Merge questions
+                                gameState.questions = [...gameState.questions, ...importedData.questions];
+                                renderQuestionsList();
+                                alert(`Merged ${importedData.questions.length} questions with your existing questions. You now have ${gameState.questions.length} questions.`);
+                            }
+                            return;
+                        }
+                    }
+                    
+                    // Import questions
+                    gameState.questions = importedData.questions;
+                    
+                    // Import settings if available
+                    if (importedData.team1Name) team1NameInput.value = importedData.team1Name;
+                    if (importedData.team2Name) team2NameInput.value = importedData.team2Name;
+                    if (importedData.maxStrikes) maxStrikesInput.value = importedData.maxStrikes;
+                    if (importedData.bonusPoints !== undefined) bonusPointsInput.value = importedData.bonusPoints;
+                    if (importedData.numRounds) numRoundsInput.value = importedData.numRounds;
+                    if (importedData.randomizeQuestions !== undefined) randomizeQuestionsInput.checked = importedData.randomizeQuestions;
+                    if (importedData.variableAnswers !== undefined) {
+                        numAnswersSelect.value = importedData.variableAnswers ? 'variable' : '4';
+                        // Trigger the change event to update UI
+                        const event = new Event('change');
+                        numAnswersSelect.dispatchEvent(event);
+                    }
+                    
+                    // Update the questions list display
+                    renderQuestionsList();
+                    
+                    alert(`Successfully imported ${gameState.questions.length} questions!`);
+                    
+                    // Save to localStorage too
+                    if (confirm('Would you like to save these imported questions to your browser storage as well?')) {
+                        saveQuestionsBtn.click();
+                    }
+                    
+                } catch (error) {
+                    alert('Error parsing imported file: ' + error.message);
+                    console.error('Error parsing imported file:', error);
+                }
+                
+                // Reset the file input
+                importFileInput.value = '';
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file');
+                importFileInput.value = '';
+            };
+            
+            reader.readAsText(file);
         });
         
         // Check for saved questions on page load
