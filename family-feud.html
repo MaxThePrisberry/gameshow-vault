@@ -25,12 +25,41 @@
             --large-text: 1.2rem;
         }
         
-        /* TV Mode */
+        /* TV mode */
         body.tv-mode {
-            --title-size: 4.5rem;
-            --subtitle-size: 2.5rem;
+            --title-size: 4rem;
+            --subtitle-size: 2rem;
             --text-size: 1.5rem;
-            --large-text: 2rem;
+            --large-text: 1.8rem;
+        }
+        
+        /* Adjust height for TV mode to prevent scrolling */
+        body.tv-mode .game-container {
+            height: 95vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        body.tv-mode .answers {
+            max-height: 50vh;
+            overflow: visible;
+        }
+        
+        body.tv-mode .all-revealed-message,
+        body.tv-mode .all-revealed-bonus {
+            position: absolute;
+            bottom: 180px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.8);
+            padding: 10px;
+            margin: 0;
+        }
+        
+        body.tv-mode .teams {
+            margin-top: auto;
         }
         
         /* Blue Theme */
@@ -407,6 +436,22 @@
             margin-bottom: 15px;
             font-weight: bold;
         }
+        .game-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: var(--primary-color);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: var(--subtitle-size);
+            font-weight: bold;
+            z-index: 100;
+            text-align: center;
+            max-width: 80%;
+        }
+        
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -567,6 +612,11 @@
             
             <div class="all-revealed-bonus" id="bonus-message">
                 BONUS! +0 points for revealing all answers!
+            </div>
+            
+            <!-- Notification Messages (combined in TV mode) -->
+            <div class="game-notification" id="game-notification" style="display: none;">
+                <div class="notification-content"></div>
             </div>
 
             <!-- Teams Score -->
@@ -737,8 +787,10 @@
             answerGroup.appendChild(answerInput);
             answerGroup.appendChild(votesInput);
             
-            // Add remove button for answers beyond the first 2
-            if (number > 2) {
+            // Only add remove button for answers beyond the first 2
+            // AND only when in variable answer mode OR beyond answer 4
+            const isVariableMode = numAnswersSelect.value === 'variable';
+            if (number > 2 && (isVariableMode || number > 4)) {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-answer-btn';
                 removeBtn.textContent = 'X';
@@ -958,10 +1010,11 @@
                 : gameState.currentQuestionIndex >= gameState.questions.length;
             
             if (isGameOver || index >= gameState.questions.length) {
-                alert('Game Over! All rounds have been played.');
-                // Return to setup screen
-                gameContainer.classList.add('hidden');
-                setupContainer.classList.remove('hidden');
+                showNotification('Game Over! All rounds have been played.', () => {
+                    // Return to setup screen
+                    gameContainer.classList.add('hidden');
+                    setupContainer.classList.remove('hidden');
+                });
                 return;
             }
 
@@ -1004,6 +1057,26 @@
                 });
             });
         }
+        
+        // Show a notification with optional callback
+        function showNotification(message, callback) {
+            // Use the game notification for TV mode, alert for normal mode
+            if (tvModeInput.checked) {
+                const notification = document.getElementById('game-notification');
+                const content = notification.querySelector('.notification-content');
+                content.textContent = message;
+                notification.style.display = 'block';
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                    if (callback) callback();
+                }, 3000);
+            } else {
+                alert(message);
+                if (callback) callback();
+            }
+        }
 
         // Reveal an answer
         function revealAnswer(index) {
@@ -1025,12 +1098,21 @@
 
             // Check if all answers are revealed
             if (gameState.revealedAnswers.length === currentQuestion.answers.length) {
-                allRevealedMessage.style.display = 'block';
-                
-                // Show bonus message if bonus points are enabled
-                if (gameState.bonusPoints > 0) {
-                    bonusMessage.textContent = `BONUS! +${gameState.bonusPoints} points for revealing all answers!`;
-                    bonusMessage.style.display = 'block';
+                if (tvModeInput.checked) {
+                    // In TV mode, show a combined notification
+                    const message = gameState.bonusPoints > 0 
+                        ? `All answers revealed! BONUS: +${gameState.bonusPoints} points!` 
+                        : 'All answers revealed!';
+                    showNotification(message);
+                } else {
+                    // In regular mode, show the standard messages
+                    allRevealedMessage.style.display = 'block';
+                    
+                    // Show bonus message if bonus points are enabled
+                    if (gameState.bonusPoints > 0) {
+                        bonusMessage.textContent = `BONUS! +${gameState.bonusPoints} points for revealing all answers!`;
+                        bonusMessage.style.display = 'block';
+                    }
                 }
             }
         }
@@ -1147,17 +1229,9 @@
                 team1ScoreDisplay.textContent = '0';
                 team2ScoreDisplay.textContent = '0';
                 
-                // If randomized questions are enabled, re-shuffle the play order
-                if (gameState.randomizeQuestions) {
-                    // Fisher-Yates shuffle
-                    for (let i = gameState.playOrder.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [gameState.playOrder[i], gameState.playOrder[j]] = [gameState.playOrder[j], gameState.playOrder[i]];
-                    }
-                }
-                
-                updateRoundDisplay();
-                loadQuestion(gameState.playOrder[0]);
+                // Return to the setup screen
+                gameContainer.classList.add('hidden');
+                setupContainer.classList.remove('hidden');
             }
         });
         
